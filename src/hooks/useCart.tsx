@@ -23,11 +23,11 @@ const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const [cart, setCart] = useState<Product[]>(() => {
-    // const storagedCart = Buscar dados do localStorage
+    const storagedCart = localStorage.getItem('@RocketShoes:cart')
 
-    // if (storagedCart) {
-    //   return JSON.parse(storagedCart);
-    // }
+    if (storagedCart) {
+      return JSON.parse(storagedCart);
+    }
 
     return [];
   });
@@ -37,14 +37,37 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
      if(cart.filter((producIfExist) => producIfExist.id === productId).length){
        setCart(cart.map((product) => {
          if (product.id === productId) {
-           return {...product, amount: product.amount + 1};
+            const changedProduct = {...product, amount: product.amount + 1};
+
+            const oldProducts = localStorage.getItem('@RocketShoes:cart')
+            if (typeof oldProducts === 'string') {
+              const toChangeProducts: Product[]= JSON.parse(oldProducts)
+
+              if (toChangeProducts.length) {
+                const newChangedProducts = toChangeProducts.map(newProduct => {
+                  if (newProduct.id === product.id) {
+                    return {
+                      ...newProduct,
+                      amount: newProduct.amount + 1,
+                    }
+                  } else {
+                    return newProduct
+                  }
+                })
+                localStorage.setItem('@RocketShoes:cart', JSON.stringify(newChangedProducts))
+              }
+            }
+
+           return changedProduct;
          } else {
            return product
          }
        })) 
      } else {
        const response = await api.get('/products/'+productId)
-       setCart([...cart, {...response.data, amount: 1}])
+       const newCard = [...cart, {...response.data, amount: 1}]
+       localStorage.setItem('@RocketShoes:cart', JSON.stringify(newCard))
+       setCart(newCard)
      }
     } catch {
     }
