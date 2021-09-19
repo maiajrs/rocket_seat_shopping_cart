@@ -75,7 +75,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
+      
     } catch {
       // TODO
     }
@@ -86,7 +86,34 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
+      setCart(cart.map((product) => {
+        if (product.id === productId) {
+           const changedProduct = {...product, amount: amount + 1};
+
+           const oldProducts = localStorage.getItem('@RocketShoes:cart')
+           if (typeof oldProducts === 'string') {
+             const toChangeProducts: Product[]= JSON.parse(oldProducts)
+
+             if (toChangeProducts.length) {
+               const newChangedProducts = toChangeProducts.map(newProduct => {
+                 if (newProduct.id === product.id) {
+                   return {
+                     ...newProduct,
+                     amount: newProduct.amount + 1,
+                   }
+                 } else {
+                   return newProduct
+                 }
+               })
+               localStorage.setItem('@RocketShoes:cart', JSON.stringify(newChangedProducts))
+             }
+           }
+
+          return changedProduct;
+        } else {
+          return product
+        }
+      })) 
     } catch {
       // TODO
     }
