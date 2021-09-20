@@ -6,7 +6,7 @@ import {
 } from "react-icons/md";
 
 import { useCart } from "../../hooks/useCart";
-import { formatPrice } from "../../util/format";
+import { formatPrice} from "../../util/format";
 import { Container, ProductTable, Total } from "./styles";
 
 interface Product {
@@ -20,17 +20,16 @@ interface Product {
 const Cart = (): JSX.Element => {
   const { cart, removeProduct, updateProductAmount } = useCart();
 
-  const cartFormatted = cart.map((product) => {
-    return {
-      id: product.id,
-      amount: product.price * product.amount,
-    };
-  });
+  const cartFormatted = cart.map((product) => ({ 
+    ...product, 
+    priceFormatted: formatPrice(product.price),
+    sobTotal: formatPrice(product.price * product.amount)
+  }));
 
 
   const total = formatPrice(
-    cartFormatted.reduce((sumTotal, product) => {
-      return sumTotal + product.amount;
+    cart.reduce((sumTotal, product) => {
+      return sumTotal + product.price * product.amount;
     }, 0)
   );
 
@@ -65,14 +64,14 @@ const Cart = (): JSX.Element => {
           </tr>
         </thead>
         <tbody>
-          {cart.map((product) => (
-            <tr data-testid="product">
+          {cartFormatted.map((product) => (
+            <tr key={product.id} data-testid="product">
               <td>
                 <img src={product.image} alt={product.title} />
               </td>
               <td>
                 <strong>{product.title}</strong>
-                <span>{formatPrice(product.price)}</span>
+                <span>{product.priceFormatted}</span>
               </td>
               <td>
                 <div>
@@ -100,7 +99,7 @@ const Cart = (): JSX.Element => {
                 </div>
               </td>
               <td>
-                <strong>{formatPrice(cartFormatted.filter(productFiltered => product.id === productFiltered.id)[0].amount)}</strong>
+                <strong>{product.sobTotal}</strong>
               </td>
               <td>
                 <button
