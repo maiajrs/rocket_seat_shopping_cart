@@ -10,7 +10,7 @@ interface CartProviderProps {
 interface UpdateProductAmount {
   productId: number;
   amount: number;
-}
+} 
 
 interface CartContextData {
   cart: Product[];
@@ -68,8 +68,25 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     );
   }
 
+  const checkStock = async (productId: number) => {
+    const { data } = await api.get("/stock");
+    const stock: Stock[] = data;
+    const filteredStock = stock.filter((valor) => {
+      return valor.id === productId;
+    });
+
+    const cardFiltered = cart.filter((valor) => {
+      return valor.id === productId;
+    });
+
+    return filteredStock[0].amount <= (cardFiltered[0]?.amount || 0);
+  };
+
   const addProduct = async (productId: number) => {
     try {
+      if (await checkStock(productId).then((res) => res))
+        throw new Error("Quantidade solicitada fora de estoque");
+
       if (
         cart.filter((producIfExist) => producIfExist.id === productId).length
       ) {
@@ -114,23 +131,28 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         localStorage.setItem("@RocketShoes:cart", JSON.stringify(newCard));
         setCart(newCard);
       }
-    } catch {}
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const removeProduct = (productId: number) => {
     try {
-      setCart(cart.filter((product) => product.id !== productId))
+      setCart(cart.filter((product) => product.id !== productId));
       const localProducts = localStorage.getItem("@RocketShoes:cart");
-      if (localProducts === 'string') {
+      if (localProducts === "string") {
         const productParsed: Product[] = JSON.parse(localProducts);
         const newProductsParsed = productParsed.filter((oldProduct) => {
-          return  oldProduct.id !== productId
+          return oldProduct.id !== productId;
         });
 
-        localStorage.setItem('@RocketShoes:cart', JSON.stringify(newProductsParsed));
+        localStorage.setItem(
+          "@RocketShoes:cart",
+          JSON.stringify(newProductsParsed)
+        );
       }
-    } catch {
-      // TODO
+    } catch(e) {
+      toast.error('Erro ao deletar o produto')
     }
   };
 
@@ -139,9 +161,16 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      upDateAmount({productId, amount})
-    } catch {
-      // TODO
+      const cardFiltered = cart.filter((valor) => {
+        return valor.id === productId;
+      });
+      if (!(amount <= cardFiltered[0].amount)) {
+        if (await checkStock(productId).then((res) => res))
+          throw new Error("Quantidade solicitada fora de estoque");
+      }
+      upDateAmount({ productId, amount });
+    } catch (e: any) {
+      toast.error(e.message);
     }
   };
 
